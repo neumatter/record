@@ -135,6 +135,19 @@ export default class NeuRecord {
   }
 
   static async build (options) {
+    if (!options) {
+      const cwd = process.cwd()
+      const specs = await fsp.readdir(cwd)
+      if (specs.includes('record.config.js')) {
+        const spec = new Spec({
+          name: 'record.config.js',
+          path: cwd
+        })
+        options = await spec.import('default')
+      } else {
+        throw new Error('No options were supplied to NeuRecord directly or through a config file in cwd.')
+      }
+    }
     const record = new NeuRecord(options)
     await record.traverse()
     return record
@@ -160,9 +173,3 @@ export default class NeuRecord {
     })
   }
 }
-
-const record = await NeuRecord.build({
-  path: '/Users/cal/Dropbox/Dev/neujs/tests/basic'
-})
-
-console.log(record)
