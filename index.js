@@ -88,6 +88,30 @@ export default class NeuRecord {
     return output
   }
 
+  async readdir () {
+    const specs = await fsp.readdir(this.path)
+
+    await NeuPack.all(specs, async specname => {
+      const spec = new Spec({
+        name: specname,
+        path: this.path,
+        basepath: this.basepath,
+        replacers: this.#replacer
+      })
+      const nextStep = await this.#step(spec)
+      if (nextStep === 'record') {
+        this.subrecords.push(spec)
+      } else if (nextStep === 'file') {
+        if (this.#useMiddleware && spec.name === '_middleware') {
+          this.middleware.push(spec)
+        } else {
+          this.files.push(spec)
+          return spec
+        }
+      }
+    })
+  }
+
   async traverse () {
     const specs = await fsp.readdir(this.path)
 
@@ -150,6 +174,12 @@ export default class NeuRecord {
     }
     const record = new NeuRecord(options)
     await record.traverse()
+    return record
+  }
+
+  static async readdir (options) {
+    const record = new NeuRecord(options)
+    await record.readdir()
     return record
   }
 

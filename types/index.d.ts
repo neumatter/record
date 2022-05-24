@@ -75,7 +75,9 @@ declare class NeuRecord {
   find: (callback: (spec: Spec) => any) => Promise<Array<Spec>>
   importModules: (exp?: string, callback?: (module: any, spec: Spec) => any) => Promise<Array<any>>
   traverse: () => Promise<void>
+  readdir: () => Promise<void>
   static build: (options: NeuRecordOptions) => Promise<NeuRecord>
+  static readdir: (options: NeuRecordOptions) => Promise<NeuRecord>
   autoRoutes: (callback: (result: AutoRoutesResult) => any) => Promise<void>
 }
 
