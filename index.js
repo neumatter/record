@@ -39,11 +39,15 @@ export default class NeuRecord {
     this.basepath = basepath
     this.name = name
     this.previous = previous
-    this.files = []
+    this.files = new NeuPack({ id: 'pathName' })
     if (this.#useMiddleware) this.middleware = []
-    this.subrecords = []
-    this.map = new NeuPack({ id: 'name' })
+    this.subrecords = new NeuPack({ id: 'pathName' })
+    this.map = new NeuPack({ id: 'path' })
     this.cwd = process.cwd()
+  }
+
+  get pathName () {
+    return this.previous ? `/${this.previous}/${this.name}` : `/${this.name}`
   }
 
   shouldIgnore (input) {
@@ -65,22 +69,17 @@ export default class NeuRecord {
     return (await fsp.stat(input)).isDirectory()
   }
 
-  async find (callback) {
-    const output = []
-    const search = async (record) => {
-      await NeuPack.all(record.files, async (spec) => {
-        if (callback(spec)) return output.push(spec)
-        return null
-      })
-      await NeuPack.all(record.subrecords, search)
-    }
-    await search(this)
-    return output
+  findSpecs (searchParam) {
+    return this.files.find(searchParam)
+  }
+
+  findRecords (searchParam) {
+    return this.subrecords.find(searchParam)
   }
 
   async importModules (exp, callback) {
     const output = []
-    await NeuPack.all(this.files, async spec => {
+    await this.files.all(async spec => {
       const module = exp ? await spec.import(exp) : await spec.import()
       const result = callback ? callback(module, spec) : module
       output.push(result)
@@ -100,14 +99,18 @@ export default class NeuRecord {
       })
       const nextStep = await this.#step(spec)
       if (nextStep === 'record') {
-        this.subrecords.push(spec)
+        const record = new NeuRecord({
+          path: spec.path,
+          name: spec.name,
+          basepath: spec.toRoutePath(),
+          previous: this.name,
+          middleware: this.#useMiddleware
+        })
+        this.subrecords.push(record)
       } else if (nextStep === 'file') {
-        if (this.#useMiddleware && spec.name === '_middleware') {
-          this.middleware.push(spec)
-        } else {
-          this.files.push(spec)
-          return spec
-        }
+        (this.#useMiddleware && spec.name === '_middleware')
+          ? this.middleware.push(spec)
+          : this.files.push(spec)
       }
     })
   }
@@ -132,7 +135,7 @@ export default class NeuRecord {
           middleware: this.#useMiddleware
         })
         if (record.files.length || record.subrecords.length) {
-          this.map.post({
+          this.map.push({
             path: record.path,
             name: record.name,
             files: record.files,
@@ -141,19 +144,18 @@ export default class NeuRecord {
           if (this.#useMiddleware) {
             this.middleware.push(...record.middleware)
           }
-          return (
-            this.#mergeFiles
-              ? this.files.push(...record.files)
-              : this.subrecords.push(record)
-          )
+          if (this.#mergeFiles) {
+            record.files.each(value => this.files.push(value))
+            return 'subrecord found & merged'
+          } else {
+            this.subrecords.push(record)
+            return 'subrecord found & pushed'
+          }
         }
       } else if (nextStep === 'file') {
-        if (this.#useMiddleware && spec.name === '_middleware') {
-          this.middleware.push(spec)
-        } else {
-          this.files.push(spec)
-          return spec
-        }
+        (this.#useMiddleware && spec.name === '_middleware')
+          ? this.middleware.push(spec)
+          : this.files.push(spec)
       }
     })
   }
@@ -184,20 +186,22 @@ export default class NeuRecord {
   }
 
   async autoRoutes (callback) {
-    const routers = await NeuPack.all(this.files, async spec => {
-      const module = await spec.import('default')
-      const result = { path: spec.toRoutePath(), module, middleware: null }
-      if (this.#useMiddleware && this.middleware.length) {
-        await NeuPack.all(this.middleware, async middleware => {
-          const testMw = new RegExp(middleware.path.replace('/_middleware.js', ''))
-          if (testMw.test(spec.path)) {
-            const mw = await middleware.import('default')
-            result.middleware = mw
-          }
-        })
+    const routers = await this.files.all(
+      async (/** @type {Spec} */ spec) => {
+        const module = await spec.import('default')
+        const result = { path: spec.toRoutePath(), module, middleware: null }
+        if (this.#useMiddleware && this.middleware.length) {
+          await NeuPack.all(this.middleware, async middleware => {
+            const testMw = new RegExp(middleware.path.replace('/_middleware.js', ''))
+            if (testMw.test(spec.path)) {
+              const mw = await middleware.import('default')
+              result.middleware = mw
+            }
+          })
+        }
+        return result
       }
-      return result
-    })
+    )
     NeuPack.each(routers, router => {
       callback(router)
     })

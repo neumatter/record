@@ -26,6 +26,9 @@ declare class Spec {
   subext: string
   customName: string
 
+  get fullname (): string
+  get pathName (): string
+
   async import: (label?: string) => Promise<any>
   async isRecord: () => Promise<boolean>
   toRoutePath: () => string
@@ -50,6 +53,20 @@ declare interface AutoRoutesResult {
   middleware: any
 }
 
+declare interface NeuPackSpec extends NeuPack {
+  keys: Array<string>
+  data: {
+    [key: string]: Spec
+  }
+}
+
+declare interface NeuPackRecord extends NeuPack {
+  keys: Array<string>
+  data: {
+    [key: string]: NeuRecord
+  }
+}
+
 declare class NeuRecord {
   constructor (options: NeuRecordOptions): NeuRecord
 
@@ -63,16 +80,19 @@ declare class NeuRecord {
   basepath: string
   name: string
   previous: string
-  files: Array<Spec>
+  files: NeuPackSpec
   middleware?: Array<Spec>
-  subrecords: Array<NeuRecord>
+  subrecords: NeuPackRecord
   map: NeuPack
   cwd: string
 
+  get pathName (): string
+
+  findSpecs: (searchParam: object) => Array<Spec>
+  findRecords: (searchParam: object) => Array<NeuRecord>
   shouldIgnore: (input: Spec) => boolean
   private #step: (spec: Spec) => Promise<'ignore' | 'record' | 'file'>
   isRecord: (input: string) => Promise<boolean>
-  find: (callback: (spec: Spec) => any) => Promise<Array<Spec>>
   importModules: (exp?: string, callback?: (module: any, spec: Spec) => any) => Promise<Array<any>>
   traverse: () => Promise<void>
   readdir: () => Promise<void>
