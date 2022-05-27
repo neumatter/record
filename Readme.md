@@ -24,7 +24,7 @@ npm i @neumatter/record
 ## Usage
 
 
-### Scan Directory:
+### Build Record:
 
 ```js
 import Record from '@neumatter/record'
@@ -76,8 +76,47 @@ const NeuRecord = {
 }
 ```
 
+### Read Directory:
 
-### Methods of Result:
+```js
+import Record from '@neumatter/record'
+
+const record = await Record.readdir({
+  path: process.cwd(),
+  allow: ['.json']
+})
+
+// Returns
+const NeuRecord = {
+  path: '/Users/dev/neujs/tests/basic',
+  basepath: '/',
+  name: '',
+  previous: null,
+  files: NeuPack {
+    keys: [ '/basic/json', '/basic/neu', '/basic/record' ],
+    data: {
+      '/basic/json': [Spec],
+      '/basic/neu': [Spec],
+      '/basic/record': [Spec]
+    },
+    id: 'pathName'
+  },
+  subrecords: NeuPack {
+    keys: [ '/public', '/schemas', '/server' ],
+    data: {
+      '/public': [NeuRecord],
+      '/schemas': [NeuRecord],
+      '/server': [NeuRecord]
+    },
+    id: 'pathName'
+  },
+  map: NeuPack { keys: [], data: {}, id: 'path' },
+  cwd: '/Users/dev/neujs/tests/basic'
+}
+```
+
+
+### Methods of Build:
 
 ```js
 import Record from '@neumatter/record'
@@ -89,6 +128,24 @@ const record = await Record.build({
 
 // returns Array<modules>
 const modules = await record.importModules('default')
+
+// NeuRecord.files.all: loop through files Async
+await record.files.all(async spec => {
+  const specModule = await spec.import('default')
+  // do something with <specModule>
+})
+
+// NeuRecord.files.each: loop through files Sync
+record.files.each(spec => {
+  const specModule = spec.import('default')
+  spec.import('default')
+    .then(specModule => {
+    // do something with <specModule>
+    })
+    .catch(err => {
+      // error
+    })
+})
 
 // imports Array<module.default> and calls the callback on each module
 await record.autoRoutes((router) => {
