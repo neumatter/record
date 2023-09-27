@@ -53,20 +53,6 @@ declare interface AutoRoutesResult {
   middleware: any
 }
 
-declare interface NeuPackSpec extends NeuPack {
-  keys: Array<string>
-  data: {
-    [key: string]: Spec
-  }
-}
-
-declare interface NeuPackRecord extends NeuPack {
-  keys: Array<string>
-  data: {
-    [key: string]: NeuRecord
-  }
-}
-
 declare class NeuRecord {
   constructor (options: NeuRecordOptions): NeuRecord
 
