@@ -1,6 +1,6 @@
 {
   "name": "@neumatter/record",
-  "version": "1.0.7",
+  "version": "1.0.9",
   "description": "Module for scanning file directories. Can configure automatic routes with middleware.",
   "type": "module",
   "author": "Cal Young",
@@ -24,21 +24,11 @@
   ],
   "main": "./index.js",
   "types": "./types/index.d.ts",
-  "devDependencies": {
-    "@babel/eslint-parser": "^7.17.0",
-    "standard": "^16.0.4"
-  },
   "dependencies": {
     "@neumatter/is": "^1.0.2",
     "neupack": "^1.0.3"
   },
-  "babel": {
-    "targets": {
-      "node": "16"
-    }
-  },
   "standard": {
-    "parser": "@babel/eslint-parser",
     "ignore": [
       "/types"
     ]
