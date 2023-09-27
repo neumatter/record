@@ -7,6 +7,13 @@ const defaultAllow = ['.js', '.mjs', '.cjs']
 const defaultIgnore = ['.git', 'node_modules']
 const defaultReplacer = [{ key: 'index', value: '' }]
 
+class NeuPackSpec extends NeuPack {
+  constructor (options) {
+    super(options)
+    this.name = 'NeuPackSpec'
+  }
+}
+
 export default class NeuRecord {
   #ignoreDots
   #mergeFiles
@@ -39,7 +46,7 @@ export default class NeuRecord {
     this.basepath = basepath
     this.name = name
     this.previous = previous
-    this.files = new NeuPack({ id: 'pathName' })
+    this.files = new NeuPackSpec({ id: 'pathName' })
     if (this.#useMiddleware) this.middleware = []
     this.subrecords = new NeuPack({ id: 'pathName' })
     this.map = new NeuPack({ id: 'path' })
